@@ -8,6 +8,7 @@ import skimage
 from skimage.feature import hog
 import random
 from collections import Counter
+from tqdm import tqdm
 
 
 def resize_and_prepare_images(src, width, height, include):
@@ -34,34 +35,69 @@ def resize_and_prepare_images(src, width, height, include):
         
         joblib.dump(data, pklname)
 
-def consult_primitive_classifier(y_train, labels, accuracy, random_state):
-    random.seed(random_state)
-    labeled = []
-    for sample in y_train:
-        rand = random.uniform(0, 1.0)
-        if rand <= accuracy: 
-            labeled.append(sample)
-        else: 
-            possible_labels = [x for x in labels if x != sample]
-            labeled.append(random.choice(possible_labels))
-    return labeled
+# def consult_primitive_classifier(y_train, labels, accuracy, random_state):
+#     random.seed(random_state)
+#     labeled = []
+#     for sample in y_train:
+#         rand = random.uniform(0, 1.0)
+#         if rand <= accuracy: 
+#             labeled.append(sample)
+#         else: 
+#             possible_labels = [x for x in labels if x != sample]
+#             labeled.append(random.choice(possible_labels))
+#     return labeled
 
-def consult_primitive_classifiers_with_majority_vote(y_train, labels, accuracy_low, accuracy_up, random_state, amount):
-    random.seed(random_state)
-    accuracies = []
-    for _ in range(amount): accuracies.append(random.uniform(accuracy_low, accuracy_up))
-    #print(accuracies)
+def consult_primitive_classifiers_with_majority_vote(y_train, labels, annotators):
     results = []
-    for x in accuracies: results.append(consult_primitive_classifier(y_train, labels, x, (x * random_state)))
+    for x in tqdm(annotators, desc='consulting primitive annotators', leave=False): results.append(x.annotate_multi(y_train, labels))
     labels = []
-    for result in zip(*results): labels.append(majority_vote(result))
+    for result in zip(*results): 
+        label, majority = majority_vote(result)
+        for x in zip(result, annotators):
+            annotator_label = x[0]
+            annotator = x[1]
+            if annotator_label == label: annotator.increase_correct(majority)
+        labels.append(label)
     return labels
 
 def majority_vote(data):
     counter = Counter(data)
-    return counter.most_common(1)[0][0]
+    votes = counter.most_common(1)[0][1]
+    majority = votes / len(data)
+    return counter.most_common(1)[0][0], majority
 
+class PrimitveAnnotator():
+    def __init__(self, accuracy_low, accuracy_up, random_state):
+        accuracy = random.uniform(accuracy_low, accuracy_up)
+        self.accuracy = accuracy
+        self.annotated = 0
+        self.correct = 0
+        self.random_state = random_state
+    
+    def get_accuracy(self):
+        return self.accuracy
 
+    def get_performance(self):
+        return self.correct / self.annotated
+    
+    def get_consultations(self):
+        return self.annotated
+    
+    def increase_correct(self, correct):
+        self.correct = self.correct + correct
+    
+    def annotate_one(self, label, possible_labels):
+        random.seed(self.random_state / (self.annotated + 1))
+        rand = random.uniform(0.0, 1.0)
+        self.annotated = self.annotated + 1
+        if rand <= self.accuracy: return label
+        else: return random.choice([x for x in possible_labels if x != label])
+    
+    def annotate_multi(self, labels, possible_labels):
+        results = []
+        for label in labels: results.append(self.annotate_one(label, possible_labels))
+        return results
+        
 
     
  
@@ -113,3 +149,15 @@ class HogTransformer(BaseEstimator, TransformerMixin):
             return np.array([local_hog(img) for img in X])
         except:
             return np.array([local_hog(img) for img in X])
+        
+
+def get_label_from_probabilities(probabilities, labels):
+    result = []
+    probabilities = []
+    for x in probabilities:
+        #print(x)
+        max = max(x)
+        index = x.index(max)
+        result.append(labels[index])
+        probabilities.append(max)
+    return result, probabilities
