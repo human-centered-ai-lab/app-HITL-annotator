@@ -152,12 +152,14 @@ class HogTransformer(BaseEstimator, TransformerMixin):
         
 
 def get_label_from_probabilities(probabilities, labels):
+    #print(probabilities)
+    #print(labels)
     result = []
-    probabilities = []
+    label_probabilities = []
     for x in probabilities:
         #print(x)
-        max = max(x)
+        max = np.max(x)
         index = x.index(max)
         result.append(labels[index])
-        probabilities.append(max)
-    return result, probabilities
+        label_probabilities.append(max)
+    return result, label_probabilities

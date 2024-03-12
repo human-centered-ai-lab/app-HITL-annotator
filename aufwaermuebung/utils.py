@@ -13,15 +13,43 @@ class Classifier:
     def __init__(self, sep, spp):
         self.sep = sep
         self.spp = spp
+        self.gt = []
+        self.classified = []
+    
+    def reset(self):
+        self.gt = []
+        self.classified = []
+    
+    def get_eslimated_spp(self):
+        count = 0
+        correct = 0
+        for x in zip(self.gt, self.classified): 
+            if x[0] == 'N': 
+                count = count + 1
+                if x[1] == 'N': correct = correct + 1
+    
+    def get_eslimated_sep(self):
+        count = 0
+        correct = 0
+        for x in zip(self.gt, self.classified): 
+            if x[0] == 'K': 
+                count = count + 1
+                if x[1] == 'K': correct = correct + 1
+
+    def set_gt(self, value):
+        self.gt.append(value)
     
     def get_individual_classification(self, value):
         rand = random.uniform(0, 1.0)
+        classified = None
         if value == 'N':
-            if rand > self.sep: return 'K'
-            else: return 'N'
+            if rand > self.sep: classified = 'K'
+            else: classified = 'N'
         else:
-            if rand > self.spp: return 'N'
-            else: return 'K'
+            if rand > self.spp: classified = 'N'
+            else: classified =  'K'
+        self.classified.append(classified)
+        return classified
 
     def get_test_classifications(self, gt):
         return list(map(self.get_individual_classification, gt))

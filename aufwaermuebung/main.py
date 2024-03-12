@@ -2,7 +2,7 @@ from utils import generate_binary_statements, generate_classifiers, majority_vot
 
 n = 10000
 m = 10
-k = 10
+k = m
 sep_low = 0.7
 sep_up = 0.9
 spp_low = 0.8
@@ -11,6 +11,15 @@ spp_up = 0.98
 gt = generate_binary_statements(0.25, 10000)
 
 classifiers = generate_classifiers(sep_low, sep_up, spp_low, spp_up, m)
+
+def estimate_sep_spp():
+    tests = classifiers[:k]
+    results = [classifier.get_test_classifications(gt) for classifier in tests]
+    majority_voted = []
+    for result in zip(*results):
+        vote_result = majority_vote(result)
+        majority_voted.append(vote_result)
+    for classifier in tests: classifier.set_gt(majority_voted)
 
 for index, classifier in enumerate(classifiers):
     results = []

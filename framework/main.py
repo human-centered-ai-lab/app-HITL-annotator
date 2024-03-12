@@ -16,11 +16,11 @@ width = 64
 height = 64
 sep_low = 0.3
 sep_up = 0.8
-m = 10 # amount of annotators
+m = 21 # amount of annotators
 k = 10
 a = 0.1 # fraction of samples to use for initial annotation
 random_state = 42
-iterations = 10  
+iterations = 10
 
 include = ['River', 'SeaLake', 'Forest', 'Residential']
 
@@ -97,16 +97,21 @@ def annotation_case(output):
     X_test_hog = hogify.transform(X_test_gray)
     X_test_prepared = scalify.transform(X_test_hog)
     y_pred = sgd_clf.predict_proba(X_test_prepared)
-    #y_pred = sgd_clf.predict(X_test_prepared)
-    y_pred_labels, y_pred_probabilities = get_label_from_probabilities(y_pred.tolist(), np.unique(data['label']))
-    #print(y_pred_labels)
-    percentage = 100*np.sum(y_pred_labels == y_test)/len(y_test)
-    if output:
+
+
+    while True:
+        #y_pred = sgd_clf.predict(X_test_prepared)
+        y_pred_labels, y_pred_probabilities = get_label_from_probabilities(y_pred.tolist(), np.unique(data['label']))
+        #print(y_pred_labels)
         print('')
-        print('---------------------------------')
-        print('ANNOTATION CASE')
-        print('Percentage correct: ', percentage)
-        print('Consultations used: ', np.sum([x.get_consultations() for x in annotators]))
+        #print(y_pred)
+        percentage = 100*np.sum(y_pred_labels == y_test)/len(y_test)
+        if output:
+            print('')
+            print('---------------------------------')
+            print('ANNOTATION CASE')
+            print('Percentage correct: ', percentage)
+            print('Consultations used: ', np.sum([x.get_consultations() for x in annotators]))
     return percentage
 
 percentages = [annotation_case(True) for _ in tqdm(range(iterations), leave=True)]
