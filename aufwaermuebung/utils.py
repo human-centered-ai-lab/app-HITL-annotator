@@ -20,24 +20,34 @@ class Classifier:
         self.gt = []
         self.classified = []
     
-    def get_eslimated_spp(self):
+    def get_sep(self):
+        return self.sep
+    
+    def get_spp(self):
+        return self.spp
+    
+    def get_estimated_spp(self):
         count = 0
         correct = 0
         for x in zip(self.gt, self.classified): 
             if x[0] == 'N': 
                 count = count + 1
                 if x[1] == 'N': correct = correct + 1
+        if count == 0: return 0
+        return correct / count
     
-    def get_eslimated_sep(self):
+    def get_estimated_sep(self):
         count = 0
         correct = 0
         for x in zip(self.gt, self.classified): 
             if x[0] == 'K': 
                 count = count + 1
                 if x[1] == 'K': correct = correct + 1
+        if count == 0: return 0
+        return correct / count
 
     def set_gt(self, value):
-        self.gt.append(value)
+        for x in value: self.gt.append(x)
     
     def get_individual_classification(self, value):
         rand = random.uniform(0, 1.0)
