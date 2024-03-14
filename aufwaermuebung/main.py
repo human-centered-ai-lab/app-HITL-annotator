@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-n = 2500
+n = 1500
 m = 10
 k = 10
 sep_low = 0.7
@@ -26,12 +26,16 @@ def estimate_sep_spp(gt, k, output, reset=True):
     sppe = []
     spp = []
     sep = []
+    error_sep = []
+    error_spp = []
     for index, classifier in enumerate(tests): 
         classifier.set_gt(majority_voted)
         sepe.append(classifier.get_estimated_sep())
         sppe.append(classifier.get_estimated_spp())
         sep.append(classifier.get_sep())
         spp.append(classifier.get_spp())
+        error_sep.append(abs(classifier.get_estimated_sep() - classifier.get_sep()))
+        error_spp.append(abs(classifier.get_estimated_spp() - classifier.get_spp()))
         if output:
             print('')
             print('classifier ', index)
@@ -39,7 +43,7 @@ def estimate_sep_spp(gt, k, output, reset=True):
             print('spp estimated: ', classifier.get_estimated_spp())
             print('sep          : ', classifier.get_sep())
             print('spp          : ', classifier.get_spp())
-    return sepe, sppe, sep, spp
+    return sepe, sppe, sep, spp, error_sep, error_spp
 
 
 gt = generate_binary_statements(0.25, n)
@@ -55,31 +59,80 @@ def plot(x,y,y1,xaxislabel, yaxislabel, ylabel, y1label, title):
     plt.title(title)
     plt.show()  # display
 
+def plot_twin(x, y1, y2, y3, y4, xaxislabel, y1axislabel, y2axislabel, y1label, y2label, y3label, y4label, title):
+    #plt.figure(figsize=(10,10))
+    fig, ax1 = plt.subplots()
+    fig.set_figheight(10)
+    fig.set_figwidth(10)
+    ax1.set_ylim([0,1])
+    ax1.set_ylabel(y1axislabel)
+    ax1.set_xlabel(xaxislabel)
+    ax1.plot(x, y1, label=y1label, color='#ff0088')
+    ax1.plot(x, y2, label=y2label, color='#8800ff')
+    plt.legend(loc = (0.8, 0.52))
+    ax2 = ax1.twinx()
+    ax2.set_ylim([min([*y3, *y4]), max([*y3, *y4])])
+    ax2.set_ylabel(y2axislabel)
+    ax2.plot(x, y3, label=y3label, color='#ff6600')
+    ax2.plot(x, y4, label=y4label, color='#66ff00')
+    fig.tight_layout()
+    plt.legend(loc = (0.8, 0.45))
+    plt.title(title)
+    plt.show()  # display
+
+
+
 def estimate_convergence(k):
     sepes = []
     sppes = []
     spps = []
     seps = []
+    error_seps = []
+    error_spps = []
     X = []
     y = []
     y1 = []
+    ye = []
+    ye_1 = []
     first = True
     for x in tqdm(gt):
-        sepe, sppe, sep, spp = estimate_sep_spp([x], k, False, first)
+        sepe, sppe, sep, spp, error_sep, error_spp = estimate_sep_spp([x], k, False, first)
         first = False
         sepes.append(sepe)
         spps.append(spp)
         seps.append(sep)
         sppes.append(sppe)
-    for index, iteration in enumerate(zip(sepes, sppes, seps, spps)):
-        avg_sepe = iteration[0][0]
-        avg_sppe = iteration[1][0]
+        error_seps.append(error_sep)
+        error_spps.append(error_spp)
+    for index, iteration in enumerate(zip(sepes, sppes, seps, spps, error_seps, error_spps)):
+        first_sepe = iteration[0][0]
+        first_sppe = iteration[1][0]
+        first_error_sep = iteration[4][0]
+        first_error_spp = iteration[5][0]
         X.append(index)
-        y.append(avg_sepe)
-        y1.append(avg_sppe)
-    plot(X, y, y1, 'Iteration', 'sep', 'estimated spp', 'estimated spp', f'Estimation for sep and spp for {k} classifiers')
+        y.append(first_sepe)
+        y1.append(first_sppe)
+        ye.append(first_error_sep)
+        ye_1.append(first_error_spp)
+    plot_twin(
+        X,
+        y,
+        y1,
+        ye,
+        ye_1,
+        'Iteration',
+        'sep and spp',
+        'error',
+        'estimated sep',
+        'estimated spp',
+        'error sep',
+        'error spp',
+        f'Estimation for sep and spp for {k} classifiers'
+    )
+    #plot(X, y, y1, 'Iteration', 'sep', 'estimated spp', 'estimated spp', f'Estimation for sep and spp for {k} classifiers')
+    #plot(X, ye, ye_1, 'Iteration', 'error', 'sep error', 'spp error', f'Error of estimation for sep and spp for {k} classifiers')
 
-for x in range(3, k+1): estimate_convergence(x)
+for x in range(10, k+1): estimate_convergence(x)
 
 
 
