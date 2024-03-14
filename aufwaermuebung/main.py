@@ -2,8 +2,9 @@ from utils import generate_binary_statements, generate_classifiers, majority_vot
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
+import random
 
-n = 1500
+n = 500
 m = 10
 k = 10
 sep_low = 0.7
@@ -129,10 +130,38 @@ def estimate_convergence(k):
         'error spp',
         f'Estimation for sep and spp for {k} classifiers'
     )
+    return X, y1, ye_1
     #plot(X, y, y1, 'Iteration', 'sep', 'estimated spp', 'estimated spp', f'Estimation for sep and spp for {k} classifiers')
     #plot(X, ye, ye_1, 'Iteration', 'error', 'sep error', 'spp error', f'Error of estimation for sep and spp for {k} classifiers')
 
-for x in range(10, k+1): estimate_convergence(x)
+def plot_multi(x, ys, ylabels, yaxislabel, xaxislabel, title, legend):
+    colors = ['#ff0088', '#8800ff', '#ff6600', '#66ff00', '#ff0000', '#00ff00', '0000ff']
+    plt.figure(figsize=(10,10))
+    plt.ylim([0, 1])
+    for index, y in enumerate(zip(ys, ylabels)):
+        plt.plot(x, y[0], label=y[1], color=colors[index])  # Plot the chart
+    plt.xlabel(xaxislabel)
+    plt.ylabel(yaxislabel)
+    plt.legend(loc = legend)
+    plt.title(title)
+    plt.show()  # display
+
+ys = []
+labels = []
+Xs = []
+errors = []
+
+for x in range(3, 7): 
+    random.seed(42)
+    X, y, err = estimate_convergence(x)
+    ys.append(y)
+    errors.append(err)
+    Xs = X
+    labels.append(f'{x} classifiers')
+
+plot_multi(X, errors, labels, 'spp error', 'Iteration', 'Spp error for 3,4,5,6 classifiers', 'upper right')
+plot_multi(X, ys, labels, 'spp', 'Iteration', 'Spp for 3,4,5,6 classifiers', 'lower right')
+
 
 
 

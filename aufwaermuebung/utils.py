@@ -15,6 +15,8 @@ class Classifier:
         self.spp = spp
         self.gt = []
         self.classified = []
+        random.seed(42)
+
     
     def reset(self):
         self.gt = []
@@ -26,7 +28,7 @@ class Classifier:
     def get_spp(self):
         return self.spp
     
-    def get_estimated_spp(self):
+    def get_estimated_sep(self):
         count = 0
         correct = 0
         for x in zip(self.gt, self.classified): 
@@ -36,7 +38,7 @@ class Classifier:
         if count == 0: return 0
         return correct / count
     
-    def get_estimated_sep(self):
+    def get_estimated_spp(self):
         count = 0
         correct = 0
         for x in zip(self.gt, self.classified): 
@@ -66,7 +68,8 @@ class Classifier:
 
 
 def generate_classifiers(sep_low, sep_up, spp_low, spp_up, amount):
-    return [Classifier(random.uniform(sep_low, sep_up), random.uniform(spp_low, spp_up))] * amount
+    #return [Classifier(0.75, 0.85) for _ in range(amount)]
+    return [Classifier(random.uniform(sep_low, sep_up), random.uniform(spp_low, spp_up)) for _ in range(amount)]
 
 def majority_vote(data):
     counter = Counter(data)
