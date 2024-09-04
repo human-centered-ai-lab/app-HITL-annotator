@@ -53,7 +53,7 @@ def consult_primitive_classifiers_with_majority_vote(y_train, labels, annotators
     labels = []
     for result in zip(*results): 
         label, majority = majority_vote(result)
-        for x in zip(result, annotators):
+        for x in zip(result, annotators): 
             annotator_label = x[0]
             annotator = x[1]
             if annotator_label == label: annotator.increase_correct(majority)
@@ -163,3 +163,9 @@ def get_label_from_probabilities(probabilities, labels):
         result.append(labels[index])
         label_probabilities.append(max)
     return result, label_probabilities
+    
+
+def normalize_probabilities(probabilities):
+    max = np.max(probabilities)
+    normalized = [(x / max) for x in probabilities]
+    return normalized

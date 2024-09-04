@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import random
 
-n = 500
+n = 1000
 m = 10
 k = 10
 sep_low = 0.7
@@ -83,7 +83,7 @@ def plot_twin(x, y1, y2, y3, y4, xaxislabel, y1axislabel, y2axislabel, y1label, 
 
 
 
-def estimate_convergence(k):
+def estimate_convergence(k, no_plot=False):
     sepes = []
     sppes = []
     spps = []
@@ -96,7 +96,7 @@ def estimate_convergence(k):
     ye = []
     ye_1 = []
     first = True
-    for x in tqdm(gt):
+    for x in tqdm(gt, leave=False):
         sepe, sppe, sep, spp, error_sep, error_spp = estimate_sep_spp([x], k, False, first)
         first = False
         sepes.append(sepe)
@@ -106,16 +106,25 @@ def estimate_convergence(k):
         error_seps.append(error_sep)
         error_spps.append(error_spp)
     for index, iteration in enumerate(zip(sepes, sppes, seps, spps, error_seps, error_spps)):
-        first_sepe = iteration[0][0]
-        first_sppe = iteration[1][0]
-        first_error_sep = iteration[4][0]
-        first_error_spp = iteration[5][0]
+        # first_sepe = iteration[0][0]
+        # first_sppe = iteration[1][0]
+        # first_error_sep = iteration[4][0]
+        # first_error_spp = iteration[5][0]
+        # X.append(index)
+        # y.append(first_sepe)
+        # y1.append(first_sppe)
+        # ye.append(first_error_sep)
+        # ye_1.append(first_error_spp)
+        avg_sepe = np.average(iteration[0])
+        avg_sppe = np.average(iteration[1])
+        avg_error_sep = np.average(iteration[4])
+        avg_error_spp = np.average(iteration[5])
         X.append(index)
-        y.append(first_sepe)
-        y1.append(first_sppe)
-        ye.append(first_error_sep)
-        ye_1.append(first_error_spp)
-    plot_twin(
+        y.append(avg_sepe)
+        y1.append(avg_sppe)
+        ye.append(avg_error_sep)
+        ye_1.append(avg_error_spp)
+    if not no_plot: plot_twin(
         X,
         y,
         y1,
@@ -130,37 +139,83 @@ def estimate_convergence(k):
         'error spp',
         f'Estimation for sep and spp for {k} classifiers'
     )
-    return X, y1, ye_1
+    return X, y1, ye_1, y, ye
     #plot(X, y, y1, 'Iteration', 'sep', 'estimated spp', 'estimated spp', f'Estimation for sep and spp for {k} classifiers')
     #plot(X, ye, ye_1, 'Iteration', 'error', 'sep error', 'spp error', f'Error of estimation for sep and spp for {k} classifiers')
 
-def plot_multi(x, ys, ylabels, yaxislabel, xaxislabel, title, legend):
-    colors = ['#ff0088', '#8800ff', '#ff6600', '#66ff00', '#ff0000', '#00ff00', '0000ff']
-    plt.figure(figsize=(10,10))
-    plt.ylim([0, 1])
+def plot_multi(x, ys, ylabels, yaxislabel, xaxislabel, title, legend, filename, upper=1.0):
+    colors = ['#ff0088', '#8800ff', '#ff6600', '#66ff00', '#ff0000', '#00ff00', '#0000ff', '#95B8D1', '#EDAFB8', '#666A86']
+    plt.figure(figsize=(6,6))
+    plt.ylim([0, upper])
     for index, y in enumerate(zip(ys, ylabels)):
         plt.plot(x, y[0], label=y[1], color=colors[index])  # Plot the chart
     plt.xlabel(xaxislabel)
     plt.ylabel(yaxislabel)
     plt.legend(loc = legend)
     plt.title(title)
-    plt.show()  # display
+    if filename:
+        plt.savefig(filename)
+    else:
+        plt.show()  # display
 
-ys = []
+ys_spp = []
+ys_sep = []
 labels = []
 Xs = []
-errors = []
+errors_spp = []
+errors_sep = []
 
-for x in range(3, 7): 
+results = {}
+
+combined = [2,3,6,10]
+
+for x in [2,3,4,5,6,7,8,9,10]: 
+    print(f'for {x} classifiers')
     random.seed(42)
-    X, y, err = estimate_convergence(x)
-    ys.append(y)
-    errors.append(err)
-    Xs = X
-    labels.append(f'{x} classifiers')
 
-plot_multi(X, errors, labels, 'spp error', 'Iteration', 'Spp error for 3,4,5,6 classifiers', 'upper right')
-plot_multi(X, ys, labels, 'spp', 'Iteration', 'Spp for 3,4,5,6 classifiers', 'lower right')
+    temp_spp = []
+    temp_err_spp = []
+    temp_sep = []
+    temp_err_sep = []
+
+    for _ in tqdm(range(1000)):
+        X, y_spp, err_spp, y_sep, err_sep = estimate_convergence(x, True)
+        temp_err_spp.append(err_spp)
+        temp_spp.append(y_spp)
+        temp_err_sep.append(err_sep)
+        temp_sep.append(y_sep)
+    
+    temp_spp_avg = []
+    temp_err_spp_avg = []
+    temp_sep_avg = []
+    temp_err_sep_avg = []
+
+    for values in zip(*temp_spp):
+        temp_spp_avg.append(np.average(values))
+    
+    for values in zip(*temp_err_spp):
+        temp_err_spp_avg.append(np.average(values))
+
+    for values in zip(*temp_sep):
+        temp_sep_avg.append(np.average(values))
+    
+    for values in zip(*temp_err_sep):
+        temp_err_sep_avg.append(np.average(values))
+    
+    plot_multi(X, [temp_err_spp_avg], [f'{x} classifiers'], 'Spp error', 'Iteration', f'Spp error for {x} classifiers', 'upper right', f'./imgout/individual_{x}_spp.png', 1.0)
+    plot_multi(X, [temp_err_sep_avg], [f'{x} classifiers'], 'Sep error', 'Iteration', f'Sep error for {x} classifiers', 'upper right', f'./imgout/individual_{x}_sep.png', 1.0)
+    #print(y)
+    if x in combined:
+        ys_spp.append(temp_spp_avg)
+        errors_spp.append(temp_err_spp_avg)
+        ys_sep.append(temp_sep_avg)
+        errors_sep.append(temp_err_sep_avg)
+        Xs = X
+        labels.append(f'{x} classifiers')
+
+plot_multi(Xs, errors_spp, labels, 'Spp error', 'Iteration', 'Spp error for 2,3,6,10 classifiers', 'upper right', './imgout/combined_spp.png', 1.0)
+plot_multi(Xs, errors_sep, labels, 'Sep error', 'Iteration', 'Sep error for 2,3,6,10 classifiers', 'upper right', './imgout/combined_sep.png', 1.0)
+#plot_multi(Xs, ys, labels, 'spp', 'Iteration', 'Spp for 3,4,5,6 classifiers', 'lower right')
 
 
 
