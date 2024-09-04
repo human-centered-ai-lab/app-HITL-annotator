@@ -90,8 +90,8 @@ class HITLAnnotator:
                 if prob >= prob_high:
                     #datapoint = item[1]
                     id = item[0]
-                    if not id in self.annotations:
-                        self.annotations[id] = label
+                    #if not id in self.annotations:
+                    #    self.annotations[id] = label
                     auto_annotated_X.append(item)
                     auto_annotated_y.append(label)
             do_break = False

@@ -18,9 +18,9 @@ from ui import Ui
 width = 64
 height = 64
 annotators = []
-a = 0.05
-prob_high = 0.80
-prob_low = 0.30
+a = 0.1
+prob_high = 0.65
+prob_low = 0.50
 mode = 'multi'
 min_annotators = 3
 max_annotators = 5
@@ -75,6 +75,8 @@ class HogTransformer(BaseEstimator, TransformerMixin):
             return np.array([local_hog(img) for img in X])
         
 
+# this is to bring the images into the right format
+# it is assumed that images are placed in folders that are named by the labels of the ground truth in the src directory
 def resize_and_prepare_images(src, width, height, include):
     data = dict()
     data['description'] = 'resized ({0}x{1})animal images in rgb'.format(int(width), int(height))
@@ -99,7 +101,7 @@ def resize_and_prepare_images(src, width, height, include):
         
         joblib.dump(data, pklname)
 
-
+# load the previously preprocessed images
 data = joblib.load(f'images_{width}x{width}px.pkl')
  
 print('')
@@ -111,14 +113,20 @@ print('image shape: ', data['data'][0].shape)
 print('labels:', np.unique(data['label']))
 
 
-ui = Ui()
-ui.start(3001)
-print('ui started')
+# ui = Ui()
+# ui.start(3001)
+# print('ui started')
 
+# create annotators and connect ui instance
+# for x in range(20):
+#     ann = Annotator(str(x), 'primitive', limit=1000, accuracy_low=0.85, accuracy_high=0.98, random_state=None)
+#     ann = Annotator(str(x), 'function', limit=1000)
+#     ui.register(str(x))
+#     annotators.append(ann)
+
+# create primitive annotators for simulation
 for x in range(20):
-    #ann = Annotator(str(x), 'primitive', limit=1000, accuracy_low=0.85, accuracy_high=0.98, random_state=None)
-    ann = Annotator(str(x), 'function', limit=1000)
-    ui.register(str(x))
+    ann = Annotator(str(x), 'primitive', limit=1000, accuracy_low=0.85, accuracy_high=0.99)
     annotators.append(ann)
 
 X = np.array(data['data'])
@@ -147,12 +155,14 @@ X_test_prepared = scalify.transform(X_test_hog)
 
 sgd_clf = SGDClassifier(random_state=42, max_iter=1000, tol=1e-3, loss='log_loss')
 
-def return_label(id, sample_X, sample_y, sample_prob, possible_labels):
-    print(f'Consulting annotator {id}')
-    result = ui.request_annotation(id, sample_X, possible_labels, sample_y)
-    return result
+# the function that gets called when expoert annotation is requested
+# requesting annotation from UI possible
+# def return_label(id, sample_X, sample_y, sample_prob, possible_labels):
+#     print(f'Consulting annotator {id}')
+#     result = ui.request_annotation(id, sample_X, possible_labels, sample_y)
+#     return result
 
-hitl = HITLAnnotator(annotators, a, return_label, prob_high, prob_low, mode, sgd_clf, X_train_prepared, np.unique(data['label']), min_annotators, max_annotators, X_test_prepared, y_test, X)
+hitl = HITLAnnotator(annotators, a, None, prob_high, prob_low, mode, sgd_clf, X_train_prepared, np.unique(data['label']), min_annotators, max_annotators, X_test_prepared, y_test, X)
 hitl.train_classifier_with_human_in_the_loop(y_train)
 
 def base_case():
