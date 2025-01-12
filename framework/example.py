@@ -14,16 +14,17 @@ import os
 import joblib
 from skimage.transform import resize
 from ui import Ui
+import pickle
 
 width = 64
 height = 64
 annotators = []
-a = 0.1
-prob_high = 0.65
+a = 0.02
+prob_high = 0.54
 prob_low = 0.50
 mode = 'multi'
-min_annotators = 3
-max_annotators = 5
+min_annotators = 1
+max_annotators = 3
 
 class RGB2GrayTransformer(BaseEstimator, TransformerMixin):
     """
@@ -73,6 +74,42 @@ class HogTransformer(BaseEstimator, TransformerMixin):
             return np.array([local_hog(img) for img in X])
         except:
             return np.array([local_hog(img) for img in X])
+
+
+def unpickle_cifar(file, width, height):
+    data = dict()
+    data['description'] = 'resized ({0}x{1})animal images in rgb'.format(int(width), int(height))
+    data['label'] = []
+    data['filename'] = []
+    data['data'] = []
+    with open(file, 'rb') as fo:
+        loaded = pickle.load(fo, encoding='bytes')
+        pixels = loaded[b'data']
+        
+        images = []
+        for img in pixels:
+            rs = img[0:1024]
+            gs = img[1024:2048]
+            bs = img[2048:3072]
+            rgbs = zip(rs,gs,bs)
+            for rgb in rgbs:
+                r = rgb[0]
+                g = rgb[1]
+                b = rgb[2]
+                images.append(r)
+                images.append(g)
+                images.append(b)
+        data_np = np.array(images)
+        print('shape')
+        print(np.shape(data_np))
+        data_np_reshaped = np.reshape(data_np, (10000 ,32, 32, 3))
+        print(data_np)
+        data['label'] = loaded[b'labels']
+        data['data'] = data_np_reshaped
+        data['filename'] = loaded[b'filenames']
+    pklname = f"images_{width}x{height}px_cifar.pkl" 
+    joblib.dump(data, pklname)
+    return data
         
 
 # this is to bring the images into the right format
@@ -101,8 +138,12 @@ def resize_and_prepare_images(src, width, height, include):
         
         joblib.dump(data, pklname)
 
+unpickle_cifar('data_batch_1', width, height)
+
 # load the previously preprocessed images
-data = joblib.load(f'images_{width}x{width}px.pkl')
+#data = joblib.load(f'images_{width}x{width}px.pkl')
+data = joblib.load(f'images_{width}x{width}px_cifar.pkl')
+
  
 print('')
 print('---------------------------------')
@@ -131,6 +172,7 @@ for x in range(20):
 
 X = np.array(data['data'])
 y = np.array(data['label'])
+print(y)
 X_train, X_test, y_train, y_test = train_test_split(
     X, 
     y, 
