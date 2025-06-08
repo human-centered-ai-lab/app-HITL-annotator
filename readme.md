@@ -2,6 +2,10 @@
 
 ![Grahpical Abstract](graphical_abstract.png "Grahpical Abstract")
 
+## Paper
+
+Huelser, M., Mueller, H., Díaz-Rodríguez, N. & Holzinger, A. (2025). On the disagreement problem in Human-in-the-Loop federated machine learning. Journal of Industrial Information Integration, 45, (5), 100827, https://doi.org/10.1016/j.jii.2025.100827
+
 ## Dataset
 
 For testing purposes we use the EuroSAT dataset that provides geotagges aerial images of various places in europe. These images are labelled and classified into 10 classes. The dataset is available [here](https://github.com/phelber/EuroSAT) [1] [2].
